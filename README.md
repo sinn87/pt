@@ -1,1 +1,107 @@
-# pt
+SELECT
+    -- 新增
+		process_list_01.订单号, 
+		process_list_01.订单明细号,
+		d.`结算计划编号`,
+		d.`结算计划明细编号`,
+		process_list_01.timestamp,
+		process_list_01.区分,
+		'新增' as 处理
+from
+(SELECT
+pro_clean.订单号,
+    pro_clean.订单明细号, 
+    pro_clean.timestamp,
+t.区分
+from
+(SELECT 
+DISTINCT
+    p.订单号, 
+    p.订单明细号, 
+    p.timestamp, 
+    COALESCE(d.类型, r.类型) AS 类型 
+FROM 
+    处理对象表 p 
+LEFT JOIN 
+    大明细表 d ON p.订单号 = d.订单号 AND p.订单明细号 = d.订单明细号 AND p.timestamp = d.timestamp
+LEFT JOIN 
+    结果表 r ON p.订单号 = r.订单号 AND p.订单明细号 = r.订单明细号 )pro_clean
+left join 
+		类型表 t ON pro_clean.类型 = t.`﻿类型`
+where t.区分=1)process_list_01
+JOIN 大明细表 d ON process_list_01.订单号 = d.订单号 AND process_list_01.订单明细号 = d.订单明细号 AND process_list_01.`timestamp` = d.`timestamp`
+LEFT JOIN 结果表 r ON process_list_01.订单号 = r.订单号 AND process_list_01.订单明细号 = r.订单明细号
+WHERE r.订单号 IS NULL AND d.拒绝 <> 'Z'
+
+UNION ALL
+
+SELECT
+    -- 新增
+		process_list_01.订单号, 
+		process_list_01.订单明细号,
+		d.`结算计划编号`,
+		d.`结算计划明细编号`,
+		process_list_01.timestamp,
+		process_list_01.区分,
+		'更新' as 处理
+from
+(SELECT
+pro_clean.订单号,
+    pro_clean.订单明细号, 
+    pro_clean.timestamp,
+t.区分
+from
+(SELECT 
+DISTINCT
+    p.订单号, 
+    p.订单明细号, 
+    p.timestamp, 
+    COALESCE(d.类型, r.类型) AS 类型 
+FROM 
+    处理对象表 p 
+LEFT JOIN 
+    大明细表 d ON p.订单号 = d.订单号 AND p.订单明细号 = d.订单明细号 AND p.timestamp = d.timestamp
+LEFT JOIN 
+    结果表 r ON p.订单号 = r.订单号 AND p.订单明细号 = r.订单明细号 )pro_clean
+left join 
+		类型表 t ON pro_clean.类型 = t.`﻿类型`
+where t.区分=1)process_list_01
+JOIN 大明细表 d ON process_list_01.订单号 = d.订单号 AND process_list_01.订单明细号 = d.订单明细号 AND process_list_01.`timestamp` = d.`timestamp`
+LEFT JOIN 结果表 r ON process_list_01.订单号 = r.订单号 AND process_list_01.订单明细号 = r.订单明细号
+WHERE r.订单号 IS NOT NULL AND d.拒绝 <> 'Z'
+UNION ALL
+
+SELECT
+    -- 删除
+		process_list_01.订单号, 
+		process_list_01.订单明细号,
+		d.`结算计划编号`,
+		d.`结算计划明细编号`,
+		process_list_01.timestamp,
+		process_list_01.区分,
+		'删除' as 处理
+from
+(SELECT
+pro_clean.订单号,
+    pro_clean.订单明细号, 
+    pro_clean.timestamp,
+t.区分
+from
+(SELECT 
+DISTINCT
+    p.订单号, 
+    p.订单明细号, 
+    p.timestamp, 
+    COALESCE(d.类型, r.类型) AS 类型 
+FROM 
+    处理对象表 p 
+LEFT JOIN 
+    大明细表 d ON p.订单号 = d.订单号 AND p.订单明细号 = d.订单明细号 AND p.timestamp = d.timestamp
+LEFT JOIN 
+    结果表 r ON p.订单号 = r.订单号 AND p.订单明细号 = r.订单明细号 )pro_clean
+left join 
+		类型表 t ON pro_clean.类型 = t.`﻿类型`
+where t.区分=1)process_list_01
+JOIN 结果表 r ON process_list_01.订单号 = r.订单号 AND process_list_01.订单明细号 = r.订单明细号
+LEFT JOIN 大明细表 d ON process_list_01.订单号 = d.订单号 AND process_list_01.订单明细号 = d.订单明细号 AND process_list_01.`timestamp` = d.`timestamp`
+WHERE d.订单号 IS NULL OR d.拒绝 = 'Z'
