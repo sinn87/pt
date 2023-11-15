@@ -1,0 +1,71 @@
+DELIMITER $$
+
+CREATE PROCEDURE GenerateOperationTable()
+BEGIN
+    -- 创建一个临时表来存储操作类型
+    CREATE TEMPORARY TABLE IF NOT EXISTS TempOperations (
+        OrderID INT,
+        OrderDetailID INT,
+        Operation VARCHAR(50)
+    );
+
+    -- 处理'新增'操作
+    INSERT INTO TempOperations (OrderID, OrderDetailID, Operation)
+    SELECT DISTINCT 
+        p.OrderID, 
+        p.OrderDetailID, 
+        '新增'
+    FROM 
+        ProcessedObjects AS p
+    INNER JOIN 
+        MasterDetail AS m 
+        ON p.OrderID = m.OrderID AND p.OrderDetailID = m.OrderDetailID
+    LEFT JOIN 
+        ResultDetail AS r 
+        ON p.OrderID = r.OrderID AND p.OrderDetailID = r.OrderDetailID
+    WHERE 
+        r.OrderID IS NULL
+    GROUP BY p.OrderID, p.OrderDetailID;
+
+    -- 处理'变更'操作
+    INSERT INTO TempOperations (OrderID, OrderDetailID, Operation)
+    SELECT DISTINCT 
+        p.OrderID, 
+        p.OrderDetailID, 
+        '变更'
+    FROM 
+        ProcessedObjects AS p
+    INNER JOIN 
+        MasterDetail AS m 
+        ON p.OrderID = m.OrderID AND p.OrderDetailID = m.OrderDetailID
+    INNER JOIN 
+        ResultDetail AS r 
+        ON p.OrderID = r.OrderID AND p.OrderDetailID = r.OrderDetailID
+    GROUP BY p.OrderID, p.OrderDetailID;
+
+    -- 处理'删除'操作
+    INSERT INTO TempOperations (OrderID, OrderDetailID, Operation)
+    SELECT DISTINCT 
+        p.OrderID, 
+        p.OrderDetailID, 
+        '删除'
+    FROM 
+        ProcessedObjects AS p
+    LEFT JOIN 
+        MasterDetail AS m 
+        ON p.OrderID = m.OrderID AND p.OrderDetailID = m.OrderDetailID
+    INNER JOIN 
+        ResultDetail AS r 
+        ON p.OrderID = r.OrderID AND p.OrderDetailID = r.OrderDetailID
+    WHERE 
+        m.OrderID IS NULL
+    GROUP BY p.OrderID, p.OrderDetailID;
+
+    -- 从临时表中选择最终的操作结果，确保每个组合是唯一的
+    SELECT * FROM TempOperations GROUP BY OrderID, OrderDetailID ORDER BY OrderID, OrderDetailID;
+
+    -- 删除临时表
+    DROP TEMPORARY TABLE IF EXISTS TempOperations;
+END$$
+
+DELIMITER ;
