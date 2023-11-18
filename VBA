@@ -1,0 +1,23 @@
+Sub ReplaceEnglishWithChineseInExcel()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets("YourSheetName") ' 你的工作表名称
+
+    ' 假设SQL文本存储在A1单元格
+    Dim sqlText As String
+    sqlText = ws.Range("A1").Value 
+
+    Dim mappingWs As Worksheet
+    Set mappingWs = ThisWorkbook.Sheets("MappingTable") ' 映射表所在的工作表名称
+
+    Dim i As Long
+    For i = 1 To mappingWs.Cells(mappingWs.Rows.Count, 1).End(xlUp).Row
+        Dim englishName As String, chineseName As String
+        englishName = mappingWs.Cells(i, 1).Value ' 英文名在映射表的列
+        chineseName = mappingWs.Cells(i, 2).Value ' 中文名在映射表的列
+
+        sqlText = Replace(sqlText, englishName, chineseName)
+    Next i
+
+    ' 输出到另一个单元格，例如B1
+    ws.Range("B1").Value = sqlText
+End Sub
