@@ -1,0 +1,15 @@
+Function RemoveSQLComments(ByVal str As String) As String
+    Dim regEx As Object
+    Set regEx = CreateObject("VBScript.RegExp")
+
+    With regEx
+        .Global = True
+        .MultiLine = True
+        .IgnoreCase = False
+        .Pattern = "/\*.*?\*/"
+    End With
+
+    ' 使用正则表达式替换注释
+    RemoveSQLComments = regEx.Replace(str, "")
+    Set regEx = Nothing
+End Function
