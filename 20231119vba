@@ -1,10 +1,28 @@
+Function RemoveSQLComments(ByVal str As String) As String
+    Dim regEx As Object
+    Set regEx = CreateObject("VBScript.RegExp")
+
+    With regEx
+        .Global = True
+        .MultiLine = True
+        .IgnoreCase = False
+        .Pattern = "/\*.*?\*/"
+    End With
+
+    RemoveSQLComments = regEx.Replace(str, "")
+    Set regEx = Nothing
+End Function
+
 Sub ReplaceEnglishWithChineseInExcel()
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Sheets("YourSheetName") ' 你的工作表名称
 
     ' 假设SQL文本存储在A1单元格
     Dim sqlText As String
-    sqlText = ws.Range("A1").Value 
+    sqlText = ws.Range("A1").Value
+
+    ' 移除SQL注释
+    sqlText = RemoveSQLComments(sqlText)
 
     Dim mappingWs As Worksheet
     Set mappingWs = ThisWorkbook.Sheets("MappingTable") ' 映射表所在的工作表名称
