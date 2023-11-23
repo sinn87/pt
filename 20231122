@@ -1,0 +1,40 @@
+CREATE PROCEDURE GenerateContractAmounts()
+LANGUAGE SQLSCRIPT
+AS
+BEGIN
+    -- 定义周期长度变量（这里设置为12个月）
+    DECLARE PERIOD_LENGTH INT := 12;
+    DECLARE END_CYCLE_DATE DATE;
+    DECLARE AMOUNT DECIMAL;
+    DECLARE CURSOR CONTRACT_CURSOR FOR 
+        SELECT "单号", "开始时间", "结束时间", "解约日", "金额" FROM Contracts;
+
+    FOR CONTRACT_RECORD AS CONTRACT_CURSOR DO
+        -- 初始化变量
+        DECLARE CYCLE_DATE DATE := CONTRACT_RECORD."开始时间";
+        DECLARE CYCLE_COUNT INT := 0; -- 周期计数器
+
+        -- 计算结束日期
+        DECLARE CONTRACT_END_DATE DATE := NVL(CONTRACT_RECORD."解约日", ADD_YEARS(CONTRACT_RECORD."开始时间", 3));
+
+        WHILE :CYCLE_DATE < :CONTRACT_END_DATE AND :CYCLE_COUNT < 3 DO
+            -- 计算本周期结束日期
+            END_CYCLE_DATE := LEAST(ADD_MONTHS(:CYCLE_DATE, PERIOD_LENGTH), CONTRACT_END_DATE);
+
+            -- 计算金额
+            -- 如果结束日期是解约日期，则计算到解约日期当月，否则计算整个周期
+            IF END_CYCLE_DATE = CONTRACT_RECORD."解约日" THEN
+                AMOUNT := DATEDIFF(MONTH, :CYCLE_DATE, END_CYCLE_DATE) * CONTRACT_RECORD."金额";
+            ELSE
+                AMOUNT := PERIOD_LENGTH * CONTRACT_RECORD."金额";
+            END IF;
+
+            -- 插入记录到结果表
+            INSERT INTO ContractAmounts ("单号", "开始时间", "金额") VALUES (:CONTRACT_RECORD."单号", :CYCLE_DATE, :AMOUNT);
+
+            -- 更新周期开始日期和计数器
+            CYCLE_DATE := END_CYCLE_DATE;
+            CYCLE_COUNT := :CYCLE_COUNT + 1;
+        END WHILE;
+    END FOR;
+END;
